@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cloud Photo Gallery</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    h2 { color: #333; }
+    input[type="file"], input[type="text"], button {
+      padding: 12px 16px;
+      margin: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    input[type="text"] {
+      width: 250px;
+    }
+    #searchInput {
+      margin-top: 20px;
+      width: 300px;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+    }
+    .card:hover {
+      transform: scale(1.03);
+    }
+    .card img {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .card p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: #555;
+    }
+    .download-btn {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 6px 12px;
+      background: #2196F3;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .download-btn:hover {
+      background: #0b7dda;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Cloud Photo Gallery</h2>
+  <input type="file" id="imageInput" />
+  <input type="text" id="titleInput" placeholder="Enter image title" />
+  <button onclick="uploadImage()">Upload</button>
+
+  <br><br>
+  <input type="text" id="searchInput" placeholder="Search by title..." oninput="filterImages()" />
+
+  <div class="gallery" id="gallery"></div>
+
+  <script>
+    const SHEETDB_URL = "https://sheetdb.io/api/v1/ywur3vkujp8d4"; // Replace with your SheetDB API ID
+    let allImages = [];
+
+    function uploadImage() {
+      const file = document.getElementById('imageInput').files[0];
+      const title = document.getElementById('titleInput').value.trim();
+      if (!file) return alert("Please select an image");
+      if (!title) return alert("Please enter a title");
+
+      const reader = new FileReader();
+      reader.onloadend = function () {
+        const base64Image = reader.result;
+        const now = new Date();
+        const date = now.toLocaleDateString();
+        const time = now.toLocaleTimeString();
+
+        const data = {
+          image: base64Image,
+          title: title,
+          date: date,
+          time: time
+        };
+
+        fetch(SHEETDB_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data })
+        }).then(() => {
+          alert("Uploaded!");
+          document.getElementById("imageInput").value = "";
+          document.getElementById("titleInput").value = "";
+          loadImages();
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function loadImages() {
+      fetch(SHEETDB_URL)
+        .then(res => res.json())
+        .then(data => {
+          allImages = data.reverse(); // Store for search
+          displayImages(allImages);
+        });
+    }
+
+    function displayImages(images) {
+      const gallery = document.getElementById("gallery");
+      gallery.innerHTML = "";
+      images.forEach(item => {
+        if (item.image) {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <img src="${item.image}" alt="Image" />
+            <p><strong>Title:</strong> ${item.title || "Untitled"}</p>
+            <p><strong>Date:</strong> ${item.date || "N/A"}</p>
+            <p><strong>Time:</strong> ${item.time || "N/A"}</p>
+            <a class="download-btn" href="${item.image}" download="${item.title || 'image'}">Download</a>
+          `;
+          gallery.appendChild(card);
+        }
+      });
+    }
+
+    function filterImages() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = allImages.filter(item => (item.title || "").toLowerCase().includes(query));
+      displayImages(filtered);
+    }
+
+    loadImages(); // Initial load
+  </script>
+</body>
+  </html>
