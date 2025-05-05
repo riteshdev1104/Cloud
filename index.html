@@ -77,7 +77,8 @@
   <script>
     const SUPABASE_URL = "https://tnhwkvgqteilrrxkpmzt.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRuaHdrdmdxdGVpbHJyeGtwbXp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0MDk3MzEsImV4cCI6MjA2MTk4NTczMX0.psjl-ecFIYGDVQA2GbGmP1YfN1atVgP2zHofxuOrTeg";
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     async function uploadImage() {
       const file = document.getElementById("fileInput").files[0];
@@ -89,7 +90,7 @@
       reader.onload = async () => {
         const base64 = reader.result;
 
-        const { error } = await supabase.from("images").insert([
+        const { error } = await supabaseClient.from("images").insert([
           { title, base64, uploaded_at: new Date().toISOString() }
         ]);
         if (error) {
@@ -107,7 +108,7 @@
     }
 
     async function fetchImages() {
-      const { data, error } = await supabase.from("images").select("*").order("uploaded_at", { ascending: false });
+      const { data, error } = await supabaseClient.from("images").select("*").order("uploaded_at", { ascending: false });
       if (error) {
         console.error(error);
         return;
@@ -132,7 +133,7 @@
     }
 
     async function searchImages(query) {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("images")
         .select("*")
         .ilike("title", `%${query}%`)
@@ -156,7 +157,6 @@
       });
     }
 
-    // Load existing images on page load
     fetchImages();
   </script>
 </body>
